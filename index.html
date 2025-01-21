@@ -1,44 +1,95 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle de Ganhos</title>
-    <link rel="stylesheet" href="style.css">
+    <title>CRUD Firebase</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.8/firebase-database.js"></script>
 </head>
 <body>
-    <header>
-        <h1>Controle de Ganhos</h1>
-    </header>
-    <main>
-        <section id="month-selection">
-            <label for="year">Ano:</label>
-            <select id="year"></select>
-            <label for="month">Mês:</label>
-            <select id="month">
-                <option value="1">Janeiro</option>
-                <option value="2">Fevereiro</option>
-                <option value="3">Março</option>
-                <!-- Adicione os outros meses -->
-            </select>
-        </section>
-        <section id="add-work">
-            <h2>Adicionar Trabalho</h2>
-            <form id="work-form">
-                <input type="text" id="company" placeholder="Empresa" required>
-                <input type="number" id="cash" placeholder="Valor em dinheiro" required>
-                <input type="number" id="barter" placeholder="Valor de permuta">
-                <button type="submit">Adicionar</button>
-            </form>
-        </section>
-        <section id="summary">
-            <h2>Resumo do Mês</h2>
-            <div id="work-list"></div>
-            <p><strong>Total Dinheiro:</strong> R$ <span id="total-cash">0.00</span></p>
-            <p><strong>Total Permuta:</strong> R$ <span id="total-barter">0.00</span></p>
-            <p><strong>Total Geral:</strong> R$ <span id="total-overall">0.00</span></p>
-        </section>
-    </main>
-    <script src="script.js"></script>
+
+    <h1>CRUD Firebase</h1>
+    
+    <!-- Input para adicionar nome -->
+    <input type="text" id="nameInput" placeholder="Adicionar nome">
+    <button onclick="addName()">Adicionar</button>
+    
+    <h2>Lista de Nomes</h2>
+    <ul id="nameList"></ul>
+    
+    <script>
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyBNoe0qetEX2JwXdDli8kmTQVDxwmDK5jY",
+            authDomain: "salesdessaa.firebaseapp.com",
+            databaseURL: "https://salesdessaa-default-rtdb.firebaseio.com",
+            projectId: "salesdessaa",
+            storageBucket: "salesdessaa.firebasestorage.app",
+            messagingSenderId: "354160224607",
+            appId: "1:354160224607:web:d7a6d443bc93281950aeea",
+            measurementId: "G-CE76TPTJ2R"
+        };
+
+        // Inicialização do Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const database = firebase.database(app);
+        
+        // Referência para o nó 'nomes'
+        const nomesRef = database.ref('nomes');
+        
+        // Função para adicionar nome
+        function addName() {
+            const nameInput = document.getElementById('nameInput').value;
+            if (nameInput.trim() === "") {
+                alert("Por favor, adicione um nome!");
+                return;
+            }
+            nomesRef.push({
+                name: nameInput
+            });
+            document.getElementById('nameInput').value = "";
+        }
+        
+        // Função para renderizar a lista de nomes
+        function renderList(snapshot) {
+            const nameList = document.getElementById('nameList');
+            nameList.innerHTML = ""; // Limpar lista
+            snapshot.forEach(function(childSnapshot) {
+                const childData = childSnapshot.val();
+                const li = document.createElement('li');
+                li.setAttribute('data-id', childSnapshot.key);
+                li.innerHTML = `
+                    ${childData.name} 
+                    <button onclick="editName('${childSnapshot.key}', '${childData.name}')">Editar</button>
+                    <button onclick="deleteName('${childSnapshot.key}')">Excluir</button>
+                `;
+                nameList.appendChild(li);
+            });
+        }
+        
+        // Função para editar nome
+        function editName(id, currentName) {
+            const newName = prompt("Editar nome:", currentName);
+            if (newName !== null && newName.trim() !== "") {
+                nomesRef.child(id).update({
+                    name: newName
+                });
+            }
+        }
+        
+        // Função para excluir nome
+        function deleteName(id) {
+            if (confirm("Tem certeza que deseja excluir este nome?")) {
+                nomesRef.child(id).remove();
+            }
+        }
+        
+        // Observar mudanças no banco de dados
+        nomesRef.on('value', function(snapshot) {
+            renderList(snapshot);
+        });
+    </script>
+
 </body>
 </html>

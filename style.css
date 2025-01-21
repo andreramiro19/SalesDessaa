@@ -1,10 +1,8 @@
+/* Garantir que o layout se ajuste ao tamanho da tela */
 body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     background-color: #f4f4f4;
 }
 
@@ -23,6 +21,7 @@ main {
     background: #fff;
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin: 0 auto;
 }
 
 section {
@@ -41,6 +40,7 @@ input, select, button {
     margin-bottom: 1rem;
     border: 1px solid #ddd;
     border-radius: 4px;
+    box-sizing: border-box;
 }
 
 button {
@@ -48,8 +48,51 @@ button {
     color: #fff;
     border: none;
     cursor: pointer;
+    transition: background-color 0.3s ease;
 }
 
 button:hover {
     background-color: #3700b3;
+}
+
+.work-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.work-item button {
+    margin-left: 0.5rem;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.9rem;
+}
+
+.work-item button:first-child {
+    background-color: #ffa000;
+}
+
+.work-item button:last-child {
+    background-color: #e53935;
+}
+
+.work-item button:hover {
+    opacity: 0.8;
+}
+
+
+/* Responsividade */
+@media (max-width: 768px) {
+    body {
+        padding: 0 1rem;
+    }
+
+    main {
+        padding: 1rem;
+    }
+
+    input, select, button {
+        font-size: 1rem;
+    }
 }
