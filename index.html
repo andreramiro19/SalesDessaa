@@ -3,68 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Responsive Design</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
+    <title>Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .login-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
+        }
+
+        .login-container h1 {
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .login-container input {
+            width: 90%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .login-container button {
+            width: 100%;
+            padding: 10px;
+            background-color: #76C59D;
+            border: none;
+            color: #fff;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .login-container button:hover {
+            background-color: #218838;
+        }
+
+        .error {
+            color: red;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="month-year">
-                <img src="img/profile.png" alt="Profile Icon" style="width: 36px; height: 36px;">
-                <select id="month-selector">
-                    <option value="Janeiro">Janeiro</option>
-                    <option value="Fevereiro">Fevereiro</option>
-                    <option value="Março">Março</option>
-                    <option value="Abril">Abril</option>
-                    <option value="Maio">Maio</option>
-                    <option value="Junho">Junho</option>
-                    <option value="Julho">Julho</option>
-                    <option value="Agosto">Agosto</option>
-                    <option value="Setembro">Setembro</option>
-                    <option value="Outubro">Outubro</option>
-                    <option value="Novembro">Novembro</option>
-                    <option value="Dezembro">Dezembro</option>
-                </select>
-                <span class="year" id="year-display">2025</span>
-            </div>
-        </div>
-
-        <div class="total-gains">
-            <p>Total de ganhos</p>
-            <h1 id="total-gains">R$ 0,00</h1>
-        </div>
-
-        <div class="summary">
-            <div>
-                <p>Serviço</p>
-                <p id="total-service">R$ 0,00</p>
-            </div>
-            <div>
-                <p>Permuta</p>
-                <p id="total-exchange">R$ 0,00</p>
-            </div>
-        </div>
-
-        <div class="services" id="service-list">
-            <!-- Dynamically added services will go here -->
-        </div>
-
-        <button class="add-button" id="open-modal">Inserir</button>
-    </div>
-
-    <div class="modal" id="modal">
-        <div class="modal-content">
-            <input type="text" id="company-name" placeholder="Nome da Empresa">
-            <input type="number" id="service-value" placeholder="Valor do Serviço">
-            <input type="number" id="exchange-value" placeholder="Valor da Permuta">
-            <button id="add-service">Adicionar</button>
-        </div>
+    <div class="login-container">
+        <h1>Login</h1>
+        <input type="text" id="username" placeholder="Nome de usuário">
+        <input type="password" id="password" placeholder="Senha">
+        <button id="login-button">Entrar</button>
+        <p class="error" id="error-message" style="display: none;">Login ou senha inválido</p>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
-        import { getDatabase, ref, set, get, onValue, remove } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-database.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBNoe0qetEX2JwXdDli8kmTQVDxwmDK5jY",
@@ -80,120 +86,36 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        const monthSelector = document.getElementById('month-selector');
-        const yearDisplay = document.getElementById('year-display');
-        const serviceList = document.getElementById('service-list');
-        const totalGainsElement = document.getElementById('total-gains');
-        const totalServiceElement = document.getElementById('total-service');
-        const totalExchangeElement = document.getElementById('total-exchange');
+        const loginButton = document.getElementById('login-button');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const errorMessage = document.getElementById('error-message');
 
-        const openModalButton = document.getElementById('open-modal');
-        const modal = document.getElementById('modal');
-        const addServiceButton = document.getElementById('add-service');
+        loginButton.addEventListener('click', () => {
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
 
-        let totalService = 0;
-        let totalExchange = 0;
-        let currentYear = new Date().getFullYear();
-
-        const updateUI = (data) => {
-            serviceList.innerHTML = '';
-            totalService = 0;
-            totalExchange = 0;
-
-            for (const [key, service] of Object.entries(data || {})) {
-                const serviceItem = document.createElement('div');
-                serviceItem.classList.add('service');
-                serviceItem.innerHTML = `
-                    <img src="img/delete.png" alt="Profile Icon" style="width: 20px; height: 20px;">
-                    <div class="service-info">
-                        <p>${service.companyName}</p>
-                        <p>R$ ${parseFloat(service.serviceValue).toFixed(2)} | R$ ${parseFloat(service.exchangeValue).toFixed(2)}</p>
-                    </div>
-                    <button class="delete-button" data-id="${key}">
-                        <img src="img/delete.png" alt="Profile Icon" style="width: 20px; height: 20px;">
-                    </button>
-                `;
-
-                totalService += parseFloat(service.serviceValue);
-                totalExchange += parseFloat(service.exchangeValue);
-
-                const deleteButton = serviceItem.querySelector('.delete-button');
-                deleteButton.addEventListener('click', () => {
-                    const selectedMonth = monthSelector.value;
-                    remove(ref(db, `services/${currentYear}/${selectedMonth}/${key}`)).then(() => {
-                        fetchMonthData(currentYear, selectedMonth);
-                    });
-                });
-
-                serviceList.appendChild(serviceItem);
-            }
-
-            totalServiceElement.textContent = `R$ ${totalService.toFixed(2)}`;
-            totalExchangeElement.textContent = `R$ ${totalExchange.toFixed(2)}`;
-            totalGainsElement.textContent = `R$ ${(totalService + totalExchange).toFixed(2)}`;
-        };
-
-        const fetchMonthData = (year, month) => {
-            const monthRef = ref(db, `services/${year}/${month}`);
-            onValue(monthRef, (snapshot) => {
-                const data = snapshot.val();
-                updateUI(data);
-            });
-        };
-
-        const fetchYearData = (year) => {
-            const selectedMonth = monthSelector.value;
-            fetchMonthData(year, selectedMonth);
-        };
-
-        monthSelector.addEventListener('change', () => {
-            const selectedMonth = monthSelector.value;
-            fetchMonthData(currentYear, selectedMonth);
-        });
-
-        yearDisplay.addEventListener('click', () => {
-            currentYear = prompt("Digite o ano:", currentYear) || currentYear;
-            yearDisplay.textContent = currentYear;
-            fetchYearData(currentYear);
-        });
-
-        openModalButton.addEventListener('click', () => {
-            modal.style.display = 'flex';
-        });
-
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.style.display = 'none';
-            }
-        });
-
-        addServiceButton.addEventListener('click', () => {
-            const companyName = document.getElementById('company-name').value;
-            const serviceValue = document.getElementById('service-value').value;
-            const exchangeValue = document.getElementById('exchange-value').value;
-            const selectedMonth = monthSelector.value;
-
-            if (!companyName || isNaN(serviceValue) || isNaN(exchangeValue)) {
-                alert('Por favor, preencha todos os campos corretamente.');
+            if (!username || !password) {
+                errorMessage.textContent = 'Por favor, preencha todos os campos.';
+                errorMessage.style.display = 'block';
                 return;
             }
 
-            const newServiceRef = ref(db, `services/${currentYear}/${selectedMonth}/${Date.now()}`);
-            set(newServiceRef, {
-                companyName,
-                serviceValue,
-                exchangeValue
-            }).then(() => {
-                modal.style.display = 'none';
-                document.getElementById('company-name').value = '';
-                document.getElementById('service-value').value = '';
-                document.getElementById('exchange-value').value = '';
+            const userRef = ref(db, `users/${username}`);
+
+            get(userRef).then((snapshot) => {
+                if (snapshot.exists() && snapshot.val().password === password) {
+                    window.location.href = 'app.html'; // Redirect to the main page
+                } else {
+                    errorMessage.textContent = 'Login ou senha inválido';
+                    errorMessage.style.display = 'block';
+                }
+            }).catch((error) => {
+                console.error(error);
+                errorMessage.textContent = 'Ocorreu um erro. Tente novamente.';
+                errorMessage.style.display = 'block';
             });
         });
-
-        // Initialize with the first month's data
-        yearDisplay.textContent = currentYear;
-        fetchYearData(currentYear);
     </script>
 </body>
 </html>

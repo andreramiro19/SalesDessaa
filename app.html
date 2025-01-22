@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SalesDessaa</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="header-wrapper">
+            <div class="header-container">
+                <div class="header">
+                    <div class="month-year">
+                        <img src="img/profile.png" alt="Profile Icon" style="width: 36px; height: 36px;">
+                        <select id="month-selector">
+                            <option value="Janeiro">Janeiro</option>
+                            <option value="Fevereiro">Fevereiro</option>
+                            <option value="Março">Março</option>
+                            <option value="Abril">Abril</option>
+                            <option value="Maio">Maio</option>
+                            <option value="Junho">Junho</option>
+                            <option value="Julho">Julho</option>
+                            <option value="Agosto">Agosto</option>
+                            <option value="Setembro">Setembro</option>
+                            <option value="Outubro">Outubro</option>
+                            <option value="Novembro">Novembro</option>
+                            <option value="Dezembro">Dezembro</option>
+                        </select>
+                        <span class="year" id="year-display">2025</span>
+                    </div>
+                </div>
+
+                <div class="total-gains">
+                    <p>Total de ganhos</p>
+                    <h1 id="total-gains">R$ 0,00</h1>
+                </div>
+
+                <div class="summary">
+                    <div class="summary-item">
+                        <div class="circle" style="background-color: #76C59D;"></div>
+                        <div class="summary-text">
+                            <p>Serviço</p>
+                            <p class="serviceTotal" id="total-service">R$ 0,00</p>
+                        </div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="circle" style="background-color: #DA8C49;"></div>
+                        <div class="summary-text">
+                            <p>Permuta</p>
+                            <p class="exchangeTotal" id="total-exchange">R$ 0,00</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="service-title">
+            <p>Serviços Prestados</p>
+        </div>
+
+        <div class="services" id="service-list-container">
+            <div id="service-list">
+                <!-- Dynamically added services will go here -->
+            </div>
+        </div>
+
+        <button class="add-button" id="open-modal">Inserir</button>
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <input type="text" id="company-name" placeholder="Nome da Empresa">
+            <input type="number" id="service-value" placeholder="Valor do Serviço">
+            <input type="number" id="exchange-value" placeholder="Valor da Permuta">
+            <select id="circle-color">
+                <option value="#BD73EF">Cor 1</option>
+                <option value="#73A5EF">Cor 2</option>
+                <option value="#99b898">Cor 3</option>
+                <option value="#feceab">Cor 4</option>
+                <option value="#EF7373">Cor 5</option>
+                <option value="#EF7373">Cor 6</option>
+            </select>
+            <button id="add-service">Adicionar</button>
+        </div>
+    </div>    
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
+        import { getDatabase, ref, set, get, onValue, remove } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBNoe0qetEX2JwXdDli8kmTQVDxwmDK5jY",
+            authDomain: "salesdessaa.firebaseapp.com",
+            databaseURL: "https://salesdessaa-default-rtdb.firebaseio.com",
+            projectId: "salesdessaa",
+            storageBucket: "salesdessaa.appspot.com",
+            messagingSenderId: "354160224607",
+            appId: "1:354160224607:web:87fabeb31d0ededf50aeea",
+            measurementId: "G-JDDLSYMFT7"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const monthSelector = document.getElementById('month-selector');
+        const yearDisplay = document.getElementById('year-display');
+        const serviceList = document.getElementById('service-list');
+        const totalGainsElement = document.getElementById('total-gains');
+        const totalServiceElement = document.getElementById('total-service');
+        const totalExchangeElement = document.getElementById('total-exchange');
+
+        const openModalButton = document.getElementById('open-modal');
+        const modal = document.getElementById('modal');
+        const addServiceButton = document.getElementById('add-service');
+
+        let totalService = 0;
+        let totalExchange = 0;
+        let currentYear = new Date().getFullYear();
+
+        const pastelColors = ["#f8b195", "#f67280", "#c06c84", "#BD73EF", "#73A5EF", "#99b898", "#feceab", "#ff847c", "#e84a5f", "#EF7373"];
+
+        const getRandomPastelColor = () => {
+            return pastelColors[Math.floor(Math.random() * pastelColors.length)];
+        };
+
+        const updateUI = (data) => {
+            serviceList.innerHTML = '';
+            totalService = 0;
+            totalExchange = 0;
+
+            for (const [key, service] of Object.entries(data || {})) {
+                const serviceItem = document.createElement('div');
+                serviceItem.classList.add('service');
+                serviceItem.innerHTML = `
+                    <div class="circle" style="background-color: ${service.circleColor};"></div>
+                    <div class="service-info">
+                        <p class="company-name">${service.companyName}</p>
+                        <p class="values">
+                            <span class="service-value">R$ ${parseFloat(service.serviceValue).toFixed(2)}</span>
+                            |
+                            <span class="exchange-value">R$ ${parseFloat(service.exchangeValue).toFixed(2)}</span>
+                        </p>
+                    </div>
+                    <button class="delete-button" data-id="${key}">
+                        <img src="img/delete.png" alt="Delete Icon" style="width: 20px; height: 20px;">
+                    </button>
+                `;
+
+                totalService += parseFloat(service.serviceValue);
+                totalExchange += parseFloat(service.exchangeValue);
+
+                const deleteButton = serviceItem.querySelector('.delete-button');
+                deleteButton.addEventListener('click', () => {
+                    const selectedMonth = monthSelector.value;
+                    remove(ref(db, `services/${currentYear}/${selectedMonth}/${key}`)).then(() => {
+                        fetchMonthData(currentYear, selectedMonth);
+                    });
+                });
+
+                serviceList.appendChild(serviceItem);
+            }
+
+            totalServiceElement.textContent = `R$ ${totalService.toFixed(2)}`;
+            totalExchangeElement.textContent = `R$ ${totalExchange.toFixed(2)}`;
+            totalGainsElement.textContent = `R$ ${(totalService + totalExchange).toFixed(2)}`;
+        };
+
+
+        const fetchMonthData = (year, month) => {
+            const monthRef = ref(db, `services/${year}/${month}`);
+            onValue(monthRef, (snapshot) => {
+                const data = snapshot.val();
+                updateUI(data);
+            });
+        };
+
+        const fetchYearData = (year) => {
+            const selectedMonth = monthSelector.value;
+            fetchMonthData(year, selectedMonth);
+        };
+
+        monthSelector.addEventListener('change', () => {
+            const selectedMonth = monthSelector.value;
+            fetchMonthData(currentYear, selectedMonth);
+        });
+
+        yearDisplay.addEventListener('click', () => {
+            currentYear = prompt("Digite o ano:", currentYear) || currentYear;
+            yearDisplay.textContent = currentYear;
+            fetchYearData(currentYear);
+        });
+
+        openModalButton.addEventListener('click', () => {
+            modal.style.display = 'flex';
+        });
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        addServiceButton.addEventListener('click', () => {
+            const companyName = document.getElementById('company-name').value;
+            const serviceValue = document.getElementById('service-value').value;
+            const exchangeValue = document.getElementById('exchange-value').value;
+            const circleColor = document.getElementById('circle-color').value; // Cor escolhida
+            const selectedMonth = monthSelector.value;
+
+            if (!companyName || isNaN(serviceValue) || isNaN(exchangeValue)) {
+                alert('Por favor, preencha todos os campos corretamente.');
+                return;
+            }
+
+            const newServiceRef = ref(db, `services/${currentYear}/${selectedMonth}/${Date.now()}`);
+            set(newServiceRef, {
+                companyName,
+                serviceValue,
+                exchangeValue,
+                circleColor // Salvar a cor no banco
+            }).then(() => {
+                modal.style.display = 'none';
+                document.getElementById('company-name').value = '';
+                document.getElementById('service-value').value = '';
+                document.getElementById('exchange-value').value = '';
+            });
+        });
+
+
+        // Initialize with the first month's data
+        yearDisplay.textContent = currentYear;
+        fetchYearData(currentYear);
+    </script>
+</body>
+</html>
