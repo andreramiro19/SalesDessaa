@@ -1,126 +1,124 @@
-// Importação correta dos módulos do Firebase
-import { initializeApp } from "firebase/app";
-import { getDatabase, ref, set, onValue, get } from "firebase/database";
-
 // Configuração do Firebase
 const firebaseConfig = {
-    apiKey: "AIzaSyBNoe0qetEX2JwXdDli8kmTQVDxwmDK5jY",
-    authDomain: "salesdessaa.firebaseapp.com",
-    databaseURL: "https://salesdessaa-default-rtdb.firebaseio.com",
-    projectId: "salesdessaa",
-    storageBucket: "salesdessaa.firebasestorage.app",
-    messagingSenderId: "354160224607",
-    appId: "1:354160224607:web:d7a6d443bc93281950aeea",
-    measurementId: "G-CE76TPTJ2R"
+  apiKey: "AIzaSyBNoe0qetEX2JwXdDli8kmTQVDxwmDK5jY",
+  authDomain: "salesdessaa.firebaseapp.com",
+  databaseURL: "https://salesdessaa-default-rtdb.firebaseio.com",
+  projectId: "salesdessaa",
+  storageBucket: "salesdessaa.firebasestorage.app",
+  messagingSenderId: "354160224607",
+  appId: "1:354160224607:web:87fabeb31d0ededf50aeea",
+  measurementId: "G-JDDLSYMFT7"
 };
 
-// Inicializar o Firebase
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const database = getDatabase(app);
+const analytics = getAnalytics(app);
 
-// Seletores
-const yearSelect = document.getElementById('year');
-const monthSelect = document.getElementById('month');
-const form = document.getElementById('work-form');
-const totalCash = document.getElementById('total-cash');
-const totalBarter = document.getElementById('total-barter');
-const totalOverall = document.getElementById('total-overall');
-const workList = document.getElementById('work-list');
+// Inicializa o Firestore
+const db = getFirestore(app);
 
-// Dados armazenados localmente
-let editingIndex = null;
+const modal = document.querySelector('.modal-container')
+const tbody = document.querySelector('tbody')
+const sNome = document.querySelector('#m-nome')
+const sFuncao = document.querySelector('#m-funcao')
+const sSalario = document.querySelector('#m-salario')
+const btnSalvar = document.querySelector('#btnSalvar')
 
-function populateYearSelect() {
-    const currentYear = new Date().getFullYear();
-    yearSelect.innerHTML = '';
+let itens = []
+let id
 
-    for (let i = currentYear - 5; i <= currentYear + 5; i++) {
-        const option = document.createElement('option');
-        option.value = i;
-        option.textContent = i;
-        yearSelect.appendChild(option);
+async function loadItens() {
+  const querySnapshot = await getDocs(collection(db, "funcionarios", "dadosFuncionarios", "itens"));
+  itens = [];
+  querySnapshot.forEach((doc) => {
+    itens.push({ ...doc.data(), id: doc.id });
+  });
+  tbody.innerHTML = '';
+  itens.forEach((item, index) => {
+    insertItem(item, index);
+  });
+}
+
+async function setItensBD() {
+  itens.forEach(async (item) => {
+    await setDoc(doc(db, "funcionarios", "dadosFuncionarios", "itens", item.id), item);
+  });
+}
+
+function openModal(edit = false, index = 0) {
+  modal.classList.add('active')
+
+  modal.onclick = e => {
+    if (e.target.className.indexOf('modal-container') !== -1) {
+      modal.classList.remove('active')
     }
-    yearSelect.value = currentYear;
+  }
+
+  if (edit) {
+    sNome.value = itens[index].nome
+    sFuncao.value = itens[index].funcao
+    sSalario.value = itens[index].salario
+    id = index
+  } else {
+    sNome.value = ''
+    sFuncao.value = ''
+    sSalario.value = ''
+  }
 }
 
-// Atualizar resumo
-function updateSummary() {
-    const key = `${yearSelect.value}-${monthSelect.value}`;
-    const workRef = ref(database, `data/${key}`);
-    onValue(workRef, (snapshot) => {
-        const works = snapshot.val() || [];
-        workList.innerHTML = works.map((work, index) => `
-            <div class="work-item">
-                <p>${work.company}: R$ ${work.cash.toFixed(2)} (Dinheiro), R$ ${work.barter.toFixed(2)} (Permuta)</p>
-                <button onclick="editWork('${key}', ${index})">Editar</button>
-                <button onclick="deleteWork('${key}', ${index})">Excluir</button>
-            </div>
-        `).join('');
-
-        const totalCashValue = works.reduce((sum, work) => sum + work.cash, 0);
-        const totalBarterValue = works.reduce((sum, work) => sum + work.barter, 0);
-
-        totalCash.textContent = totalCashValue.toFixed(2);
-        totalBarter.textContent = totalBarterValue.toFixed(2);
-        totalOverall.textContent = (totalCashValue + totalBarterValue).toFixed(2);
-    });
+function editItem(index) {
+  openModal(true, index)
 }
 
-// Adicionar trabalho
-form.addEventListener('submit', (e) => {
-    e.preventDefault();
+async function deleteItem(index) {
+  await deleteDoc(doc(db, "funcionarios", "dadosFuncionarios", "itens", itens[index].id));
+  itens.splice(index, 1);
+  await setItensBD();
+  loadItens();
+}
 
-    const company = document.getElementById('company').value;
-    const cash = parseFloat(document.getElementById('cash').value);
-    const barter = parseFloat(document.getElementById('barter').value || 0);
+async function insertItem(item, index) {
+  let tr = document.createElement('tr')
 
-    const key = `${yearSelect.value}-${monthSelect.value}`;
-    const workRef = ref(database, `data/${key}`);
+  tr.innerHTML = `
+    <td>${item.nome}</td>
+    <td>${item.funcao}</td>
+    <td>R$ ${item.salario}</td>
+    <td class="acao">
+      <button onclick="editItem(${index})"><i class='bx bx-edit'></i></button>
+    </td>
+    <td class="acao">
+      <button onclick="deleteItem(${index})"><i class='bx bx-trash'></i></button>
+    </td>
+  `
+  tbody.appendChild(tr)
+}
 
-    get(workRef).then((snapshot) => {
-        const works = snapshot.val() || [];
-        if (editingIndex !== null) {
-            works[editingIndex] = { company, cash, barter };
-            editingIndex = null;
-            form.querySelector('button').textContent = "Adicionar";
-        } else {
-            works.push({ company, cash, barter });
-        }
-        set(workRef, works);
-        form.reset();
-        updateSummary();
-    });
-});
+btnSalvar.onclick = async e => {
+  if (sNome.value == '' || sFuncao.value == '' || sSalario.value == '') {
+    return
+  }
 
-// Editar trabalho
-window.editWork = function(key, index) {
-    const workRef = ref(database, `data/${key}`);
-    get(workRef).then((snapshot) => {
-        const works = snapshot.val();
-        const work = works[index];
-        document.getElementById('company').value = work.company;
-        document.getElementById('cash').value = work.cash;
-        document.getElementById('barter').value = work.barter;
-        editingIndex = index;
-        form.querySelector('button').textContent = "Salvar Alteração";
-    });
-};
+  e.preventDefault();
 
-// Excluir trabalho
-window.deleteWork = function(key, index) {
-    const workRef = ref(database, `data/${key}`);
-    get(workRef).then((snapshot) => {
-        const works = snapshot.val();
-        works.splice(index, 1);
-        set(workRef, works);
-        updateSummary();
-    });
-};
+  if (id !== undefined) {
+    itens[id].nome = sNome.value
+    itens[id].funcao = sFuncao.value
+    itens[id].salario = sSalario.value
+  } else {
+    const newItem = {
+      nome: sNome.value,
+      funcao: sFuncao.value,
+      salario: sSalario.value,
+    };
+    await addDoc(collection(db, "funcionarios", "dadosFuncionarios", "itens"), newItem);
+  }
 
-// Atualizar resumo ao mudar mês/ano
-yearSelect.addEventListener('change', updateSummary);
-monthSelect.addEventListener('change', updateSummary);
+  await setItensBD();
 
-// Inicializar
-populateYearSelect();
-updateSummary();
+  modal.classList.remove('active')
+  await loadItens();
+  id = undefined
+}
+
+loadItens()
