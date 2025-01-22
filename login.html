@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .login-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
+        }
+
+        .login-container h1 {
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .login-container input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .login-container button {
+            width: 100%;
+            padding: 10px;
+            background-color: #28a745;
+            border: none;
+            color: #fff;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .login-container button:hover {
+            background-color: #218838;
+        }
+
+        .error {
+            color: red;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>Login</h1>
+        <input type="text" id="username" placeholder="Nome de usuário">
+        <input type="password" id="password" placeholder="Senha">
+        <button id="login-button">Entrar</button>
+        <p class="error" id="error-message" style="display: none;">Login ou senha inválido</p>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBNoe0qetEX2JwXdDli8kmTQVDxwmDK5jY",
+            authDomain: "salesdessaa.firebaseapp.com",
+            databaseURL: "https://salesdessaa-default-rtdb.firebaseio.com",
+            projectId: "salesdessaa",
+            storageBucket: "salesdessaa.appspot.com",
+            messagingSenderId: "354160224607",
+            appId: "1:354160224607:web:87fabeb31d0ededf50aeea",
+            measurementId: "G-JDDLSYMFT7"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const loginButton = document.getElementById('login-button');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const errorMessage = document.getElementById('error-message');
+
+        loginButton.addEventListener('click', () => {
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            if (!username || !password) {
+                errorMessage.textContent = 'Por favor, preencha todos os campos.';
+                errorMessage.style.display = 'block';
+                return;
+            }
+
+            const userRef = ref(db, `users/${username}`);
+
+            get(userRef).then((snapshot) => {
+                if (snapshot.exists() && snapshot.val().password === password) {
+                    window.location.href = 'index.html'; // Redirect to the main page
+                } else {
+                    errorMessage.textContent = 'Login ou senha inválido';
+                    errorMessage.style.display = 'block';
+                }
+            }).catch((error) => {
+                console.error(error);
+                errorMessage.textContent = 'Ocorreu um erro. Tente novamente.';
+                errorMessage.style.display = 'block';
+            });
+        });
+    </script>
+</body>
+</html>
