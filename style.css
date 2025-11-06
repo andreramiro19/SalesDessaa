@@ -36,8 +36,8 @@ body {
     background-color: #fff;
     border-radius: 20px;
     padding: 20px;
-    overflow-y: auto;
-    max-height: calc(100% - 250px); /* Ajuste conforme o layout */
+    overflow: visible;
+    max-height: none;
 }
 
 .header .month-year {
@@ -126,11 +126,11 @@ body {
 }
 
 .serviceTotal {
-    color: #76C59D;
+    color: #72e4ab;
 }
 
 .exchangeTotal {
-    color: #DA8C49;
+    color: #ff8f27;
 }
 
 .service-title {
@@ -155,6 +155,12 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 25px;
+}
+
+.service-date {
+    font-size: 12px;
+    color: #999;
+    margin-bottom: 3px;
 }
 
 .service-info {
@@ -186,13 +192,13 @@ body {
 }
 
 .service-value {
-    color: #76C59D;
+    color: #72e4ab;
     font-weight: 500;
     font-size: 13px;
 }
 
 .exchange-value {
-    color: #DA8C49;
+    color: #ff8f27;
     font-weight: 500;
     font-size: 13px;
 }

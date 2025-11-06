@@ -1,11 +1,28 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SalesDessaa</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Ajuste para header sem scroll */
+        .header-wrapper {
+            background-color: #fff;
+            border-radius: 20px;
+            padding: 20px;
+            overflow: visible;
+            max-height: none;
+        }
+
+        /* Novo estilo para a data */
+        .service-date {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 3px;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -13,7 +30,7 @@
             <div class="header-container">
                 <div class="header">
                     <div class="month-year">
-                        <img src="img/profile.png" alt="Profile Icon" style="width: 36px; height: 36px;">
+                        <img src="img/profile2.png" alt="Profile Icon" style="width: 36px; height: 36px;">
                         <select id="month-selector">
                             <option value="Janeiro">Janeiro</option>
                             <option value="Fevereiro">Fevereiro</option>
@@ -33,20 +50,20 @@
                 </div>
 
                 <div class="total-gains">
-                    <p>Total de ganhos</p>
+                    <p>Total</p>
                     <h1 id="total-gains">R$ 0,00</h1>
                 </div>
 
                 <div class="summary">
                     <div class="summary-item">
-                        <div class="circle" style="background-color: #76C59D;"></div>
+                        <div class="circle" style="background-color: #72e4ab;"></div>
                         <div class="summary-text">
-                            <p>Serviço</p>
+                            <p>Serviços</p>
                             <p class="serviceTotal" id="total-service">R$ 0,00</p>
                         </div>
                     </div>
                     <div class="summary-item">
-                        <div class="circle" style="background-color: #DA8C49;"></div>
+                        <div class="circle" style="background-color: #ff8f27;"></div>
                         <div class="summary-text">
                             <p>Permuta</p>
                             <p class="exchangeTotal" id="total-exchange">R$ 0,00</p>
@@ -62,33 +79,35 @@
 
         <div class="services" id="service-list-container">
             <div id="service-list">
-                <!-- Dynamically added services will go here -->
+                <!-- Serviços inseridos dinamicamente -->
             </div>
         </div>
 
         <button class="add-button" id="open-modal">Inserir</button>
     </div>
 
+    <!-- Modal -->
     <div class="modal" id="modal">
         <div class="modal-content">
             <input type="text" id="company-name" placeholder="Nome da Empresa">
             <input type="number" id="service-value" placeholder="Valor do Serviço">
             <input type="number" id="exchange-value" placeholder="Valor da Permuta">
             <select id="circle-color">
-                <option value="#BD73EF">Cor 1</option>
-                <option value="#73A5EF">Cor 2</option>
-                <option value="#99b898">Cor 3</option>
-                <option value="#feceab">Cor 4</option>
-                <option value="#EF7373">Cor 5</option>
-                <option value="#EF7373">Cor 6</option>
+                <option value="#FFF9BD">Amarelo</option>
+                <option value="#73A5EF">Azul</option>
+                <option value="#FDB7EA">Rosa</option>
+                <option value="#BD73EF">Roxo</option>
+                <option value="#B0DB9C">Verde</option>
+                <option value="#F49BAB">Vermelho</option>
             </select>
+            <input type="date" id="service-date" placeholder="Data do Serviço">
             <button id="add-service">Adicionar</button>
         </div>
-    </div>    
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
-        import { getDatabase, ref, set, get, onValue, remove } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-database.js";
+        import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBNoe0qetEX2JwXdDli8kmTQVDxwmDK5jY",
@@ -110,7 +129,6 @@
         const totalGainsElement = document.getElementById('total-gains');
         const totalServiceElement = document.getElementById('total-service');
         const totalExchangeElement = document.getElementById('total-exchange');
-
         const openModalButton = document.getElementById('open-modal');
         const modal = document.getElementById('modal');
         const addServiceButton = document.getElementById('add-service');
@@ -119,31 +137,29 @@
         let totalExchange = 0;
         let currentYear = new Date().getFullYear();
 
-        const pastelColors = ["#f8b195", "#f67280", "#c06c84", "#BD73EF", "#73A5EF", "#99b898", "#feceab", "#ff847c", "#e84a5f", "#EF7373"];
-
-        const getRandomPastelColor = () => {
-            return pastelColors[Math.floor(Math.random() * pastelColors.length)];
-        };
-
         const updateUI = (data) => {
             serviceList.innerHTML = '';
             totalService = 0;
             totalExchange = 0;
 
-            for (const [key, service] of Object.entries(data || {})) {
+            const servicesArray = Object.entries(data || {}).map(([key, value]) => ({ key, ...value }));
+            servicesArray.sort((a, b) => new Date(b.serviceDate || 0) - new Date(a.serviceDate || 0));
+
+            for (const service of servicesArray) {
                 const serviceItem = document.createElement('div');
                 serviceItem.classList.add('service');
                 serviceItem.innerHTML = `
                     <div class="circle" style="background-color: ${service.circleColor};"></div>
                     <div class="service-info">
                         <p class="company-name">${service.companyName}</p>
+                        <p class="service-date">${service.serviceDate ? service.serviceDate.split('-').reverse().join('/') : ''}</p>
                         <p class="values">
                             <span class="service-value">R$ ${parseFloat(service.serviceValue).toFixed(2)}</span>
                             |
                             <span class="exchange-value">R$ ${parseFloat(service.exchangeValue).toFixed(2)}</span>
                         </p>
                     </div>
-                    <button class="delete-button" data-id="${key}">
+                    <button class="delete-button" data-id="${service.key}">
                         <img src="img/delete.png" alt="Delete Icon" style="width: 20px; height: 20px;">
                     </button>
                 `;
@@ -154,9 +170,8 @@
                 const deleteButton = serviceItem.querySelector('.delete-button');
                 deleteButton.addEventListener('click', () => {
                     const selectedMonth = monthSelector.value;
-                    remove(ref(db, `services/${currentYear}/${selectedMonth}/${key}`)).then(() => {
-                        fetchMonthData(currentYear, selectedMonth);
-                    });
+                    remove(ref(db, `services/${currentYear}/${selectedMonth}/${service.key}`))
+                        .then(() => fetchMonthData(currentYear, selectedMonth));
                 });
 
                 serviceList.appendChild(serviceItem);
@@ -167,13 +182,9 @@
             totalGainsElement.textContent = `R$ ${(totalService + totalExchange).toFixed(2)}`;
         };
 
-
         const fetchMonthData = (year, month) => {
             const monthRef = ref(db, `services/${year}/${month}`);
-            onValue(monthRef, (snapshot) => {
-                const data = snapshot.val();
-                updateUI(data);
-            });
+            onValue(monthRef, (snapshot) => updateUI(snapshot.val()));
         };
 
         const fetchYearData = (year) => {
@@ -182,8 +193,7 @@
         };
 
         monthSelector.addEventListener('change', () => {
-            const selectedMonth = monthSelector.value;
-            fetchMonthData(currentYear, selectedMonth);
+            fetchMonthData(currentYear, monthSelector.value);
         });
 
         yearDisplay.addEventListener('click', () => {
@@ -197,17 +207,24 @@
         });
 
         modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.style.display = 'none';
-            }
+            if (e.target === modal) modal.style.display = 'none';
         });
 
         addServiceButton.addEventListener('click', () => {
-            const companyName = document.getElementById('company-name').value;
-            const serviceValue = document.getElementById('service-value').value;
-            const exchangeValue = document.getElementById('exchange-value').value;
-            const circleColor = document.getElementById('circle-color').value; // Cor escolhida
+            const companyName = document.getElementById('company-name').value.trim();
+            let serviceValue = document.getElementById('service-value').value;
+            let exchangeValue = document.getElementById('exchange-value').value;
+            const circleColor = document.getElementById('circle-color').value;
+            let serviceDateInput = document.getElementById('service-date').value;
+            const serviceDate = serviceDateInput
+                ? new Date(serviceDateInput + "T00:00:00").toISOString().split('T')[0] // garante o dia correto
+                : new Date().toISOString().split('T')[0];
+
             const selectedMonth = monthSelector.value;
+
+            // Se estiver vazio, define como 0
+            serviceValue = serviceValue === '' ? 0 : parseFloat(serviceValue);
+            exchangeValue = exchangeValue === '' ? 0 : parseFloat(exchangeValue);
 
             if (!companyName || isNaN(serviceValue) || isNaN(exchangeValue)) {
                 alert('Por favor, preencha todos os campos corretamente.');
@@ -219,17 +236,18 @@
                 companyName,
                 serviceValue,
                 exchangeValue,
-                circleColor // Salvar a cor no banco
+                circleColor,
+                serviceDate
             }).then(() => {
                 modal.style.display = 'none';
                 document.getElementById('company-name').value = '';
                 document.getElementById('service-value').value = '';
                 document.getElementById('exchange-value').value = '';
+                document.getElementById('service-date').value = '';
             });
         });
 
-
-        // Initialize with the first month's data
+        // Inicialização
         yearDisplay.textContent = currentYear;
         fetchYearData(currentYear);
     </script>
